@@ -100,10 +100,10 @@ class Board(object):
     @property
     def score(self):
         _score = 0
-        _score += [koma.score for koma in self.my_mochigoma]
-        _score += [koma.score for koma in self.my_board.values()]
-        _score -= [koma.score for koma in self.your_mochigoma]
-        _score -= [koma.score for koma in self.your_board.values()]
+        _score += sum([koma.score for koma in self.my_mochigoma])
+        _score += sum([koma.score for koma in self.my_board.values()])
+        _score -= sum([koma.score for koma in self.your_mochigoma])
+        _score -= sum([koma.score for koma in self.your_board.values()])
         return _score
 
     @property
@@ -155,13 +155,13 @@ class Board(object):
 
 
 class Node(object):
-    def __init__(self, board, my_turn, depth=3):
+    def __init__(self, board, my_turn=True, depth=3):
         self.board = board
         self.my_turn = my_turn
         self.depth = depth
         self._score = None
-        self.best_moves  # TODO: implement
-        self.last_move  # TODO: implement
+        self.best_moves = None
+        # self.last_move  # TODO: implement
 
     @property
     def score(self):
@@ -172,20 +172,38 @@ class Node(object):
     @property
     def child_nodes(self):
         if self.depth == 0:
-            return None  # TODO: should return an empty array?
+            return []
         return [Node(board, not self.my_turn, depth=self.depth - 1) for board in self.board.possible_nexts]
 
     def evaluate(self):
-        """Calculate score"""
+        """
+        - Calculate score
+        - Store the best moves
+        """
         # Return the score of the board if this doesn't need to check further
         if self.depth == 0:
-            return self.board.score
+            self._score = self.board.score
+            self.best_moves = [self.board]
+            return
 
         # Else check child nodes and take the max if it's my turn, else the min
         if self.my_turn:
-            self._score = max([n.score for n in self.child_nodes])
+            minmax = max
+            best_score = -100
+            best_node = None
         else:
-            self._score = max([n.score for n in self.child_nodes])
+            minmax = min
+            best_score = 10**200
+            best_node = None
+        for n in self.child_nodes:
+            n.evaluate()
+            s = minmax(best_score, n.score)
+            if s != best_score:
+                # updating..
+                best_node = n
+                best_score = s
+        self._score = best_score
+        self.best_moves = [self.board] + best_node.best_moves
 
     @property
     def possible_nexts(self):
@@ -219,11 +237,14 @@ def main():
     b = INITIAL_BOARD
     while True:
         b.show()
-        n = Node(b, depth=3)
+        n = Node(b, depth=5)
         n.evaluate()
         print 'Score: {}'.format(n.score)
-        print 'Best moves: \n{}'.format(n.best_moves)
-        move = raw_input('Input move: ')
+        print 'Best moves:'
+        for b in n.best_moves:
+            print b
+            print
+        break
 
 
 if __name__ == '__main__':

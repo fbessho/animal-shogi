@@ -49,4 +49,3 @@ class TestBoard:
         }
         expected = {simplify(board) for board in expected}
         assert expected == actual
-
