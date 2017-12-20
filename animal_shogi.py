@@ -6,6 +6,22 @@ Koma -> A piece
 Niwatori -> Chicken
 Hiyoko -> Chick
 """
+from copy import copy
+import re
+
+
+def simplify(board):
+    b = str(board)
+    b = b.replace(' ', '')
+    b = re.sub(r'^$', '', b, flags=re.MULTILINE)
+    b = b.strip()
+    return b
+
+
+def equals(board1, board2):
+    board1 = str(board1)
+    board2 = str(board2)
+    return simplify(board1) == simplify(board2)
 
 
 class Board(object):
@@ -29,15 +45,18 @@ class Board(object):
     SIZE_COL = 3
 
     def __init__(self):
-        self.my_mochigoma = []
-        self.your_mochigoma = []
-        self.my_board = {}
-        self.your_board = {}
+        self.my_mochigoma = {}    # type: Dict[Koma, int]
+        self.your_mochigoma = {}  # type: Dict[Koma, int]
+        self.my_board = {}        # type: Dict[Tuple[int, int], Koma]
+        self.your_board = {}      # type: Dict[Tuple[int, int], Koma]
         self.my_turn = True
 
     def show(self):
         """Print the current board"""
         print self
+
+    def __eq__(self, other):
+        return equals(self, other)
 
     def __str__(self):
         s = []
@@ -57,12 +76,22 @@ class Board(object):
         s.append(','.join([k.yomi for k in self.my_mochigoma]))
         return '\n'.join(s)
 
+    def copy(self):
+        """Return a copy of the current board"""
+        b = Board()
+        b.my_mochigoma = copy(self.my_mochigoma)
+        b.your_mochigoma = copy(self.your_mochigoma)
+        b.my_board = copy(self.my_board)
+        b.your_board = copy(self.your_board)
+        b.my_turn = self.my_turn
+        return b
+
     def flip(self):
         """Return the same board but flipped internally"""
         b = Board()
         b.my_turn = not self.my_turn
-        b.my_mochigoma = self.your_mochigoma[:]
-        b.your_mochigoma = self.my_mochigoma[:]
+        b.my_mochigoma = copy(self.your_mochigoma)
+        b.your_mochigoma = copy(self.my_mochigoma)
         flip_xy = lambda (x, y): (self.SIZE_ROW - x + 1, self.SIZE_COL - y + 1)
         b.my_board = {flip_xy(coord): koma for coord, koma in self.your_board.iteritems()}
         b.your_board = {flip_xy(coord): koma for coord, koma in self.my_board.iteritems()}
@@ -79,10 +108,50 @@ class Board(object):
 
     @property
     def possible_nexts(self):
-        pass  # TODO: implement
+        """Returns Iterable[Board]"""
+        # TODO: support when self.my_turn is False
 
-        # 1. move my koma on the board
-        # 2. use mochigoma
+        # 1. use mochigoma
+        for koma in self.my_mochigoma:
+            for r in range(1, self.SIZE_ROW+1):
+                for c in range(1, self.SIZE_COL):
+                    if self._blank(r, c):
+                        board = self.copy()
+                        board.my_turn = not board.my_turn
+                        if board.my_mochigoma[koma] == 1:
+                            board.my_mochigoma.pop(koma)
+                        else:
+                            # two or more mochigoma
+                            board.my_mochigoma[koma] -= 1
+                        yield board
+
+        # 2. move my koma in the board
+        for position, koma in self.my_board.items():
+            for direction in koma.directions:
+                # new position
+                r, c = map(sum, zip(position, direction))
+                if ((r, c) not in self.my_board) and self._valid(r, c):
+                    board = self.copy()
+                    # Take opponent's koma
+                    if (r, c) in board.your_board:
+                        koma = board.your_board.pop((r, c))
+                        board.my_mochigoma[koma] = board.my_mochigoma.get(koma, 0) + 1
+                    koma = board.my_board.pop(position)
+                    board.my_board[(r, c)] = koma
+                    board.my_turn = not board.my_turn
+                    yield board
+
+    def _blank(self, r, c):
+        """Returns True if (r,c) is blank"""
+        if (r, c) in self.my_board:
+            return False
+        if (r, c) in self.your_board:
+            return False
+        return True
+
+    def _valid(self, r, c):
+        """Returns True if (r, c) is a valid position"""
+        return (1 <= r <= self.SIZE_ROW) and (1 <= c <= self.SIZE_COL)
 
 
 class Node(object):
@@ -139,7 +208,7 @@ LION = Koma([[-1, 1], [-1, 0], [-1, -1], [0, 1], [0, -1], [1, 1], [1, 0], [1, -1
 GIRAFFE = Koma([[-1, 0], [0, 1], [0, -1], [1, 0]], 4, 'HI')
 ELEPHANT = Koma([[-1, 1], [-1, -1], [1, 1], [1, -1]], 4, 'KA')
 CHICKEN = Koma([[-1, 1], [-1, 0], [0, 1], [0, -1], [1, 1], [1, 0]], 4, 'TO')
-CHICK = Koma([[0, 1]], 3, 'FU')
+CHICK = Koma([[1, 0]], 3, 'FU')
 
 INITIAL_BOARD = Board()
 INITIAL_BOARD.my_board = {(1, 1): ELEPHANT, (1, 2): LION, (1, 3): GIRAFFE, (2, 2): CHICK}
