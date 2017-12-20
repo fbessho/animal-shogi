@@ -1,5 +1,3 @@
-import re
-
 from animal_shogi import INITIAL_BOARD, equals, simplify
 
 
