@@ -114,10 +114,11 @@ class Board(object):
         # 1. use mochigoma
         for koma in self.my_mochigoma:
             for r in range(1, self.SIZE_ROW+1):
-                for c in range(1, self.SIZE_COL):
+                for c in range(1, self.SIZE_COL+1):
                     if self._blank(r, c):
                         board = self.copy()
                         board.my_turn = not board.my_turn
+                        board.my_board[(r, c)] = koma
                         if board.my_mochigoma[koma] == 1:
                             board.my_mochigoma.pop(koma)
                         else:
