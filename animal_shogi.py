@@ -13,7 +13,7 @@ import re
 def simplify(board):
     b = str(board)
     b = b.replace(' ', '')
-    b = re.sub(r'^$', '', b, flags=re.MULTILINE)
+    b = re.sub(r'^$\n', '', b, flags=re.MULTILINE)
     b = b.strip()
     return b
 
@@ -60,6 +60,7 @@ class Board(object):
 
     def __str__(self):
         s = []
+        s.append('my_turn={}'.format(self.my_turn))
         s.append(','.join([k.yomi for k in self.your_mochigoma]))
         s.append('')
         for i in range(self.SIZE_ROW, 0, -1):
@@ -109,14 +110,15 @@ class Board(object):
     @property
     def possible_nexts(self):
         """Returns Iterable[Board]"""
-        # TODO: support when self.my_turn is False
+        # make sure current_oard.my_turn is True
+        current_board = self if self.my_turn else self.flip()
 
         # 1. use mochigoma
-        for koma in self.my_mochigoma:
+        for koma in current_board.my_mochigoma:
             for r in range(1, self.SIZE_ROW+1):
                 for c in range(1, self.SIZE_COL+1):
-                    if self._blank(r, c):
-                        board = self.copy()
+                    if current_board._blank(r, c):
+                        board = current_board.copy()
                         board.my_turn = not board.my_turn
                         board.my_board[(r, c)] = koma
                         if board.my_mochigoma[koma] == 1:
@@ -124,15 +126,19 @@ class Board(object):
                         else:
                             # two or more mochigoma
                             board.my_mochigoma[koma] -= 1
+
+                        # flip back before returning
+                        if not self.my_turn:
+                            board = board.flip()
                         yield board
 
         # 2. move my koma in the board
-        for position, koma in self.my_board.items():
+        for position, koma in current_board.my_board.items():
             for direction in koma.directions:
                 # new position
                 r, c = map(sum, zip(position, direction))
-                if ((r, c) not in self.my_board) and self._valid(r, c):
-                    board = self.copy()
+                if ((r, c) not in current_board.my_board) and self._valid(r, c):
+                    board = current_board.copy()
                     # Take opponent's koma
                     if (r, c) in board.your_board:
                         koma = board.your_board.pop((r, c))
@@ -140,6 +146,8 @@ class Board(object):
                     koma = board.my_board.pop(position)
                     board.my_board[(r, c)] = koma
                     board.my_turn = not board.my_turn
+                    if not self.my_turn:
+                        board = board.flip()
                     yield board
 
     def _blank(self, r, c):
@@ -156,9 +164,8 @@ class Board(object):
 
 
 class Node(object):
-    def __init__(self, board, my_turn=True, depth=3):
+    def __init__(self, board, depth=3):
         self.board = board
-        self.my_turn = my_turn
         self.depth = depth
         self._score = None
         self.best_moves = None
@@ -174,7 +181,7 @@ class Node(object):
     def child_nodes(self):
         if self.depth == 0:
             return []
-        return [Node(board, not self.my_turn, depth=self.depth - 1) for board in self.board.possible_nexts]
+        return [Node(board, depth=self.depth - 1) for board in self.board.possible_nexts]
 
     def evaluate(self):
         """
@@ -188,9 +195,9 @@ class Node(object):
             return
 
         # Else check child nodes and take the max if it's my turn, else the min
-        if self.my_turn:
+        if self.board.my_turn:
             minmax = max
-            best_score = -100
+            best_score = -1 * 10 ** 200
             best_node = None
         else:
             minmax = min
@@ -213,7 +220,7 @@ class Node(object):
         :return: iterator of Node
         """
         for board in self.board.possible_nexts:
-            yield Node(board, not self.my_turn, self.depth-1)
+            yield Node(board, self.depth-1)
 
 
 class Koma(object):
@@ -221,6 +228,9 @@ class Koma(object):
         self.directions = directions
         self.score = score
         self.yomi = yomi
+
+    def __repr__(self):
+        return '<Koma {}>'.format(self.yomi)
 
 
 LION = Koma([[-1, 1], [-1, 0], [-1, -1], [0, 1], [0, -1], [1, 1], [1, 0], [1, -1]], 100, 'OU')
@@ -238,7 +248,7 @@ def main():
     b = INITIAL_BOARD
     while True:
         b.show()
-        n = Node(b, depth=5)
+        n = Node(b, depth=6)
         n.evaluate()
         print 'Score: {}'.format(n.score)
         print 'Best moves:'

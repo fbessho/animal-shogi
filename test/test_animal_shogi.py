@@ -4,6 +4,7 @@ from animal_shogi import INITIAL_BOARD, equals, simplify
 class TestBoard:
     def test_flip(self):
         expected = """
+        my_turn=False
         -HI-OU-KA
          * -FU * 
          * +FU * 
@@ -18,6 +19,7 @@ class TestBoard:
         actual = {simplify(board) for board in actual}
         expected = {
             """
+            my_turn=False
             -HI-OU-KA
              * -FU * 
              * +FU+OU
@@ -25,6 +27,7 @@ class TestBoard:
             """,
 
             """
+            my_turn=False
             -HI-OU-KA
              * -FU * 
             +OU+FU * 
@@ -32,6 +35,7 @@ class TestBoard:
             """,
 
             """
+            my_turn=False
             -HI-OU-KA
              * -FU * 
              * +FU+HI
@@ -39,6 +43,7 @@ class TestBoard:
             """,
 
             """
+            my_turn=False
             -HI-OU-KA
              * +FU * 
              *  *  * 
@@ -58,36 +63,42 @@ class TestBoard:
         actual = board.possible_nexts
         actual = {simplify(board) for board in actual}
         expected = """
+            my_turn=False
             -HI-OU-KA
              *  *  * 
             +FU+FU * 
             +KA+OU+HI
             
             
+            my_turn=False            
             -HI-OU-KA
              *  *  * 
              * +FU+FU
             +KA+OU+HI
             
             
+            my_turn=False            
             -HI-OU-KA
             +FU *  * 
              * +FU * 
             +KA+OU+HI
             
             
+            my_turn=False            
             -HI-OU-KA
              * +FU * 
              * +FU * 
             +KA+OU+HI
             
             
+            my_turn=False            
             -HI-OU-KA
              *  * +FU
              * +FU * 
             +KA+OU+HI
             
             
+            my_turn=False            
             -HI-OU-KA
              *  *  * 
              * +FU+OU
@@ -96,6 +107,7 @@ class TestBoard:
             FU
             
             
+            my_turn=False            
             -HI-OU-KA
              *  *  * 
             +OU+FU * 
@@ -104,6 +116,7 @@ class TestBoard:
             FU
             
             
+            my_turn=False            
             -HI-OU-KA
              *  *  * 
              * +FU+HI
@@ -112,6 +125,7 @@ class TestBoard:
             FU
             
             
+            my_turn=False            
             -HI-OU-KA
              * +FU * 
              *  *  * 
