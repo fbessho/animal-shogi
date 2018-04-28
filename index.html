@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Animal Shogi</title>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+  </head>
+  <body>
+    <div id="board"></div>
+    <script>
+        var width = 133, height = 133, span=10;
+        var rows = 4, cols=3;
+        var initial = [
+            {y: 4, x: 1, piece: "Elephant", mine: true},
+            {y: 4, x: 2, piece: "Lion",     mine: true},
+            {y: 4, x: 3, piece: "Giraffe",  mine: true},
+            {y: 3, x: 2, piece: "Chick",    mine: true},
+            {y: 2, x: 2, piece: "Chick",    mine: false},
+            {y: 1, x: 1, piece: "Giraffe",  mine: false},
+            {y: 1, x: 2, piece: "Lion",     mine: false},
+            {y: 1, x: 3, piece: "Elephant", mine: false}
+        ];
+
+
+        var svg = d3.select("#board").append("svg");
+        svg.attr("width", width * cols + span * (cols+1))
+            .attr("height", height * rows + span * (rows+1));
+
+        var pieces = svg.selectAll("image")
+            .data(initial)
+            .enter()
+            .append("g")
+            .attr("transform", function(d){
+                var x = width * (d.x - 0.5) + span * d.x;
+                var y = height * (d.y - 0.5) + span * d.y;
+                return "translate(" + x + "," + y + ")";
+            })
+            .append("image")
+            .attr("xlink:href", function(d){return "img/" + d.piece + ".png";})
+            .attr("x", -0.5*width)
+            .attr("y", -0.5*height)
+            .attr("height", height)
+            .attr("width", width)
+            .attr("transform", function(d){ if(!d.mine) return "rotate(180)";});
+
+
+    </script>
+  </body>
+</html>
