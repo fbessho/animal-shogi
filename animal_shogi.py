@@ -1,12 +1,5 @@
-"""
-
-
-Japanese-English
-Koma -> A piece
-Niwatori -> Chicken
-Hiyoko -> Chick
-"""
 from copy import copy
+import json
 import re
 
 
@@ -54,6 +47,47 @@ class Board(object):
     def show(self):
         """Print the current board"""
         print self
+
+    def to_dict(self):
+        """
+        Example returned dict:
+
+        {
+            'your_mochigoma': [],
+            'my_mochigoma': [{'koma': 'FU', 'num': 1}],
+            'board': [{'koma': 'OU', 'y': 2, 'mine': True, 'x': 1},
+                      {'koma': 'HI', 'y': 3, 'mine': True, 'x': 1},
+                      {'koma': 'KA', 'y': 1, 'mine': True, 'x': 1},
+                      {'koma': 'FU', 'y': 2, 'mine': True, 'x': 2},
+                      {'koma': 'OU', 'y': 2, 'mine': False, 'x': 4},
+                      {'koma': 'HI', 'y': 1, 'mine': False, 'x': 4},
+                      {'koma': 'KA', 'y': 3, 'mine': False, 'x': 4}]
+        }
+        """
+        board = []
+        for _board, mine in [(self.my_board, True), (self.your_board, False)]:
+            for xy, koma in _board.items():
+                x, y = xy
+                board.append(dict(x=x, y=y, koma=koma.yomi, mine=mine))
+
+        return {
+            'my_mochigoma': [{"koma": k.yomi, "num": v} for k, v in self.my_mochigoma.items()],
+            'your_mochigoma': [{"koma": k.yomi, "num": v} for k, v in self.your_mochigoma.items()],
+            'board': board
+        }
+
+    def to_json(self, path_or_fp=None):
+        # Return dict
+        if path_or_fp is None:
+            return json.dumps(self.to_dict())
+        # Write to a file
+        elif isinstance(path_or_fp, basestring):
+            with open(path_or_fp, 'w') as fp:
+                json.dump(self.to_dict(), fp)
+        # Write to a buffer
+        else:
+            json.dump(self.to_dict(), path_or_fp)
+
 
     def __eq__(self, other):
         return equals(self, other)

@@ -2,6 +2,24 @@ from animal_shogi import INITIAL_BOARD, equals, simplify
 
 
 class TestBoard:
+    def test_to_dict(self):
+        board = INITIAL_BOARD.copy()
+        koma = board.your_board.pop((3, 2))
+        board.my_mochigoma[koma] = 1
+
+        expected = {
+            'your_mochigoma': [],
+            'my_mochigoma': [{'koma': 'FU', 'num': 1}],
+            'board': [{'koma': 'OU', 'y': 2, 'mine': True, 'x': 1},
+                      {'koma': 'HI', 'y': 3, 'mine': True, 'x': 1},
+                      {'koma': 'KA', 'y': 1, 'mine': True, 'x': 1},
+                      {'koma': 'FU', 'y': 2, 'mine': True, 'x': 2},
+                      {'koma': 'OU', 'y': 2, 'mine': False, 'x': 4},
+                      {'koma': 'HI', 'y': 1, 'mine': False, 'x': 4},
+                      {'koma': 'KA', 'y': 3, 'mine': False, 'x': 4}]
+        }
+        assert expected == board.to_dict()
+
     def test_flip(self):
         expected = """
         my_turn=False
