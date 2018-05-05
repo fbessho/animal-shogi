@@ -4,12 +4,30 @@
     <meta charset="utf-8">
     <title>Animal Shogi</title>
     <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="https://d3js.org/d3-selection-multi.v1.min.js"></script>
   </head>
   <body>
-    <div id="board"></div>
+    <div id="draw-area"></div>
     <script>
-        var width = 133, height = 133, span=10;
-        var rows = 4, cols=3;
+        var WIDTH = 133, HEIGHT = 133, SPAN=10;
+        var NUM_ROWS = 4, NUM_COLS=3;
+
+        var CELL_UNSELECTED_ATTRS = {
+            "fill": "#fed330",
+            "fill-opacity": "0.3",
+            "stroke": "#a5b1c2",
+            "stroke-width": "2",
+            "stroke-dasharray": null
+        };
+
+        var CELL_SELECTED_ATTRS = {
+            "fill": "#f7b731",
+            "fill-opacity": "0.3",
+            "stroke": "#4b6584",
+            "stroke-width": "4",
+            "stroke-dasharray": "5, 5"
+        };
+
         var initial = [
             {y: 4, x: 1, piece: "Elephant", mine: true},
             {y: 4, x: 2, piece: "Lion",     mine: true},
@@ -21,42 +39,91 @@
             {y: 1, x: 3, piece: "Elephant", mine: false}
         ];
 
+        var cells = [];
+        for(var c = 1; c <= NUM_COLS; c++) {
+            for(var r = 1; r <= NUM_ROWS; r++) {
+                cells.push({
+                    r: r, c: c,
+                    x_min: HEIGHT * (c-1) + SPAN * (c-0.5),
+                    x_max: HEIGHT * c     + SPAN * (c+0.5),
+                    y_min: WIDTH  * (r-1) + SPAN * (r-0.5),
+                    y_max: WIDTH  * r     + SPAN * (r+0.5)
+                })
+            }
+        }
 
-        var svg = d3.select("#board").append("svg");
-        svg.attr("width", width * cols + span * (cols+1))
-            .attr("height", height * rows + span * (rows+1));
+        var svg = d3.select("#draw-area").append("svg");
+        svg.attr("width", WIDTH * NUM_COLS + SPAN * (NUM_COLS+1))
+            .attr("height", HEIGHT * NUM_ROWS + SPAN * (NUM_ROWS+1));
 
-        var pieces = svg.selectAll("image")
-            .data(initial)
+        var board = svg.append("g").attr("id", "board");
+        board.selectAll("rect")
+            .data(cells)
             .enter()
-            .append("g")
-            .attr("transform", function(d){
-                var x = width * (d.x - 0.5) + span * d.x;
-                var y = height * (d.y - 0.5) + span * d.y;
-                return "translate(" + x + "," + y + ")";
-            })
-            .call(d3.drag().on("drag", dragged).on("end", dropped))
-            .append("image")
-            .attr("xlink:href", function(d){return "img/" + d.piece + ".png";})
-            .attr("x", -0.5*width)
-            .attr("y", -0.5*height)
-            .attr("height", height)
-            .attr("width", width)
-            .attr("transform", function(d){ if(!d.mine) return "rotate(180)";});
+            .append("rect")
+            .classed("cell", true)
+            .attr("id", function(d){ return "cell-" + d.c + "-" + d.r; })
+            .attr("x", function(d){ return d.x_min; })
+            .attr("y", function(d){ return d.y_min; })
+            .attr("width", WIDTH + SPAN)
+            .attr("height", HEIGHT + SPAN)
+            .attrs(CELL_UNSELECTED_ATTRS);
 
+        var pieces = svg
+            .append("g")
+                .attr("id", "pieces")
+                .selectAll("image")
+                .data(initial)
+                .enter()
+            .append("g")
+                .attr("transform", function(d){
+                    var x = WIDTH * (d.x - 0.5) + SPAN * d.x;
+                    var y = HEIGHT * (d.y - 0.5) + SPAN * d.y;
+                    return "translate(" + x + "," + y + ")";
+                })
+                .call(d3.drag().on("drag", dragged).on("end", dropped))
+            .append("image")
+                .attr("xlink:href", function(d){return "img/" + d.piece + ".png";})
+                .attr("x", -0.5*WIDTH)
+                .attr("y", -0.5*HEIGHT)
+                .attr("height", HEIGHT)
+                .attr("width", WIDTH)
+                .attr("transform", function(d){ if(!d.mine) return "rotate(180)";});
 
         function dragged() {
             var thisObject = d3.select(this);
             var t = getTranslation(thisObject.attr("transform"));
             var x = t[0] + d3.event.dx;
             var y = t[1] + d3.event.dy;
-            d3.select(this).attr("transform", function(d){
+
+            resetHighlight();
+            highlightCell(...getNearestCell(x, y));
+
+            d3.select(this).attr("transform", function(){
                 return "translate(" + [x, y] + ")"
             })
         }
 
         function dropped() {
           // TODO implement
+        }
+
+        function getNearestCell(x, y) {
+            for (let c of cells) {
+                if ((x >= c.x_min) && (x <= c.x_max) && (y >= c.y_min) && (y <= c.y_max)) {
+                    console.log("nearest: ", [c.r, c.c]);
+                    return [c.r, c.c];
+                }
+            }
+            return [0, 0]
+        }
+
+        function resetHighlight() {
+            svg.selectAll(".cell").attrs(CELL_UNSELECTED_ATTRS);
+        }
+
+        function highlightCell(r, c) {
+            svg.select("#cell-" + c + "-" + r).attrs(CELL_SELECTED_ATTRS);
         }
 
         // https://stackoverflow.com/a/38230545/870658
