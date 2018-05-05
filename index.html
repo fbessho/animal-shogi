@@ -39,11 +39,13 @@
             {y: 1, x: 3, piece: "Elephant", mine: false}
         ];
 
-        var cells = [];
-        for(var c = 1; c <= NUM_COLS; c++) {
-            for(var r = 1; r <= NUM_ROWS; r++) {
+        let cells = [];
+        for(let c = 1; c <= NUM_COLS; c++) {
+            for(let r = 1; r <= NUM_ROWS; r++) {
                 cells.push({
                     r: r, c: c,
+                    x: HEIGHT * (c-0.5) + SPAN * c,
+                    y: WIDTH  * (r-0.5) + SPAN * r,
                     x_min: HEIGHT * (c-1) + SPAN * (c-0.5),
                     x_max: HEIGHT * c     + SPAN * (c+0.5),
                     y_min: WIDTH  * (r-1) + SPAN * (r-0.5),
@@ -97,7 +99,7 @@
             var y = t[1] + d3.event.dy;
 
             resetHighlight();
-            highlightCell(...getNearestCell(x, y));
+            highlightCell(getNearestCell(x, y));
 
             d3.select(this).attr("transform", function(){
                 return "translate(" + [x, y] + ")"
@@ -105,25 +107,34 @@
         }
 
         function dropped() {
-          // TODO implement
+            let thisObject = d3.select(this);
+            let t = getTranslation(thisObject.attr("transform"));
+            let x = t[0];
+            let y = t[1];
+
+            resetHighlight();
+
+            let nearestCell = getNearestCell(x, y);
+            d3.select(this).attr("transform", function(){
+                return "translate(" + [nearestCell.x, nearestCell.y] + ")"
+            })
         }
 
         function getNearestCell(x, y) {
             for (let c of cells) {
                 if ((x >= c.x_min) && (x <= c.x_max) && (y >= c.y_min) && (y <= c.y_max)) {
-                    console.log("nearest: ", [c.r, c.c]);
-                    return [c.r, c.c];
+                    // console.log("nearest: ", [c.r, c.c]);
+                    return c;
                 }
             }
-            return [0, 0]
         }
 
         function resetHighlight() {
             svg.selectAll(".cell").attrs(CELL_UNSELECTED_ATTRS);
         }
 
-        function highlightCell(r, c) {
-            svg.select("#cell-" + c + "-" + r).attrs(CELL_SELECTED_ATTRS);
+        function highlightCell(cell) {
+            svg.select("#cell-" + cell.c + "-" + cell.r).attrs(CELL_SELECTED_ATTRS);
         }
 
         // https://stackoverflow.com/a/38230545/870658
