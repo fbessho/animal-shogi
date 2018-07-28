@@ -44,10 +44,14 @@ class TestBoard:
          *  *  * 
         +KA+OU *
         
-        HI2 FU2
+        HI2,FU2
         """
         board = Board.from_str(board_str)
-        assert_board_equal(board_str, str(board))
+
+        expected = board_str
+        actual = str(board)
+
+        assert_board_equal(expected, actual)
 
     def test_to_str(self):
         expected = """
@@ -106,7 +110,7 @@ class TestBoard:
              *  *  * 
             +KA+OU+HI
             
-            FU
+            FU1
             """
         }
         expected = {simplify(board) for board in expected}
@@ -161,7 +165,7 @@ class TestBoard:
              * +FU+OU
             +KA * +HI
             
-            FU
+            FU1
             
             
             my_turn=False            
@@ -170,7 +174,7 @@ class TestBoard:
             +OU+FU * 
             +KA * +HI
             
-            FU
+            FU1
             
             
             my_turn=False            
@@ -179,7 +183,7 @@ class TestBoard:
              * +FU+HI
             +KA+OU * 
             
-            FU
+            FU1
             
             
             my_turn=False            
@@ -188,7 +192,7 @@ class TestBoard:
              *  *  * 
             +KA+OU+HI
             
-            FU
+            FU1
         """
         expected = expected.replace(' ', '').split('\n\n\n')
         expected = {simplify(board) for board in expected}

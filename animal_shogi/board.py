@@ -3,7 +3,7 @@ import re
 from copy import copy
 
 from .exceptions import ParsingError
-from .koma import LION, GIRAFFE, ELEPHANT, CHICK
+from .koma import LION, GIRAFFE, ELEPHANT, CHICK, Koma
 from .utils import equals, normalize_board_dict
 
 
@@ -23,7 +23,7 @@ class Board(object):
     SIZE_COL = 3
 
     # e.g. ' * +HI -OU'
-    BOARD_ROW_STR_PATTERN = re.compile(r'(\*|\+[A-Z]{2}|-[A-Z]{2})SIZE_COL'.replace('SIZE_COL', str(SIZE_COL)))
+    BOARD_ROW_STR_PATTERN = re.compile(r'(\*|\+[A-Z]{2}|-[A-Z]{2})' * SIZE_COL)
 
     def __init__(self):
         self.my_mochigoma = {}  # type: Dict[Koma, int]
@@ -98,31 +98,42 @@ class Board(object):
     def from_str(cls, s):
         b = Board()
         current_y = 0
-        for row in s:
-            s = s.replace(' ', '')
-            if 'my_turn' in s:
+        for row in s.split('\n'):
+            row = row.replace(' ', '').replace(',', '')
+            if 'my_turn' in row:
                 # turn
                 b.my_turn = True if 'true' in s.lower() else False
-            elif s.startswith('*') or s.startswith('-') or s.startswith('+'):
+            elif row.startswith('*') or row.startswith('-') or row.startswith('+'):
                 # board
                 current_y += 1
-                m = cls.BOARD_ROW_STR_PATTERN.match(s)
+                m = cls.BOARD_ROW_STR_PATTERN.match(row)
                 if m is None:
                     raise ParsingError('Illegal board pattern: {}'.format(s))
-                for x in range(cls.SIZE_COL):
-                    koma = m.group(x + 1)
+                for x in range(1, cls.SIZE_COL+1):
+                    koma = m.group(x)
                     if koma != '*':
                         mine = koma[0] == '+'
-                        koma = koma[1:]  # '+HI' -> 'HI'
-            # 'board': [
-            #     {'koma': 'OU', 'y': 2, 'mine': True, 'x': 1},
-            # elif s:
-            # # mochigoma
+                        yomi = koma[1:]  # '+HI' -> 'HI'
+                        if mine:
+                            b.my_board[(x, current_y)] = Koma.from_str(yomi)
+                        else:
+                            b.your_board[(x, current_y)] = Koma.from_str(yomi)
+            elif row:
+                # mochigoma
+                for i in range(len(row) / 3):
+                    koma = row[3 * i: 3 * (i+1)]  # FU2
+                    yomi = koma[:2]  # FU
+                    num = int(koma[2])  # 2
+                    if current_y == 0:
+                        b.your_mochigoma[Koma.from_str(yomi)] = num
+                    else:
+                        b.my_mochigoma[Koma.from_str(yomi)] = num
+        return b
 
     def __str__(self):
         s = []
         s.append('my_turn={}'.format(self.my_turn))
-        s.append(','.join([k.yomi for k in self.your_mochigoma]))
+        s.append(','.join([k.yomi + str(v) for k, v in self.your_mochigoma.iteritems()]))
         s.append('')
         for y in range(1, self.SIZE_ROW + 1):
             row = []
@@ -135,7 +146,7 @@ class Board(object):
                     row.append(' * ')
             s.append(''.join(row))
         s.append('')
-        s.append(','.join([k.yomi for k in self.my_mochigoma]))
+        s.append(','.join([k.yomi + str(v) for k, v in self.my_mochigoma.iteritems()]))
         return '\n'.join(s)
 
     def copy(self):
