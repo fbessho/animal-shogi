@@ -1,10 +1,5 @@
-import sys
-print('\n'.join(sys.path))
-import os
-print("vvvv PYTHONPATH vvvv")
-print(os.environ['PYTHONPATH'])
-print("^^^^ PYTHONPATH ^^^^")
-from animal_shogi import INITIAL_BOARD, equals, simplify, Board
+from animal_shogi.board import Board, INITIAL_BOARD
+from animal_shogi.utils import equals, simplify, normalize_board_dict
 
 
 def assert_board_equal(expected, actual):
@@ -19,33 +14,37 @@ def assert_board_equal(expected, actual):
 class TestBoard:
     def test_to_dict(self):
         board = INITIAL_BOARD.copy()
-        koma = board.your_board.pop((3, 2))
+        koma = board.your_board.pop((2, 2))
         board.my_mochigoma[koma] = 1
 
         expected = {
             'your_mochigoma': [],
-            'my_mochigoma': [{'koma': 'FU', 'num': 1}],
-            'board': [{'koma': 'OU', 'y': 2, 'mine': True, 'x': 1},
-                      {'koma': 'HI', 'y': 3, 'mine': True, 'x': 1},
-                      {'koma': 'KA', 'y': 1, 'mine': True, 'x': 1},
-                      {'koma': 'FU', 'y': 2, 'mine': True, 'x': 2},
-                      {'koma': 'OU', 'y': 2, 'mine': False, 'x': 4},
-                      {'koma': 'HI', 'y': 1, 'mine': False, 'x': 4},
-                      {'koma': 'KA', 'y': 3, 'mine': False, 'x': 4}]
+            'my_mochigoma': [
+                {'koma': 'FU', 'num': 1}
+            ],
+            'board': [
+                {'koma': 'OU', 'mine': True, 'x': 2, 'y': 4},
+                {'koma': 'HI', 'mine': True, 'x': 3, 'y': 4},
+                {'koma': 'KA', 'mine': True, 'x': 1, 'y': 4},
+                {'koma': 'FU', 'mine': True, 'x': 2, 'y': 3},
+                {'koma': 'OU', 'mine': False, 'x': 2, 'y': 1},
+                {'koma': 'HI', 'mine': False, 'x': 1, 'y': 1},
+                {'koma': 'KA', 'mine': False, 'x': 3, 'y': 1}
+            ]
         }
-        assert expected == board.to_dict()
+        assert normalize_board_dict(expected) == board.to_dict()
 
     def test_from_str(self):
         board_str = """        
         my_turn=True
         
         
-        -HI-OU-KA
+         * -OU-KA
          *  *  * 
-         * +FU * 
-        +KA+OU+HI
+         *  *  * 
+        +KA+OU *
         
-        FU
+        HI2 FU2
         """
         board = Board.from_str(board_str)
         assert_board_equal(board_str, str(board))
