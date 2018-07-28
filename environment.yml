@@ -1,0 +1,5 @@
+name: animal_shogi
+dependencies:
+  - python=2.7
+  - flask
+  - pytest
