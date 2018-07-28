@@ -19,20 +19,15 @@ def equals(board1, board2):
 
 class Board(object):
     """
-
-
-    your_mochigoma: (5,0)
-    +---+---+---+
-    |4,1|4,2|4,3|
-    +---+---+---+
-    |3,1|3,2|3,3|
-    +---+---+---+
-    |2,1|2,2|2,3|
     +---+---+---+
     |1,1|1,2|1,3|
     +---+---+---+
-    my_mochigoma: (0, 0)
-
+    |2,1|2,2|2,3|
+    +---+---+---+
+    |3,1|3,2|3,3|
+    +---+---+---+
+    |4,1|4,2|4,3|
+    +---+---+---+
     """
     SIZE_ROW = 4
     SIZE_COL = 3
@@ -88,22 +83,43 @@ class Board(object):
         else:
             json.dump(self.to_dict(), path_or_fp)
 
-
     def __eq__(self, other):
         return equals(self, other)
+
+
+    @staticmethod
+    def _parse_row(row):
+        r_value = []
+        for i in range(Board.SIZE_COL):
+            if row.startswith('*'):
+                r_value.append(None)
+            
+
+    @classmethod
+    def from_str(cls, s):
+        b = Board()
+        current_x = 0
+        for row in s:
+            s = s.replace(' ', '')
+            if 'my_turn' in s:
+                b.my_turn = True if 'true' in s.lower() else False
+            elif s.startswith('*') or s.startswith('-') or s.startswith('+'):
+                current_row += 1
+
+
 
     def __str__(self):
         s = []
         s.append('my_turn={}'.format(self.my_turn))
         s.append(','.join([k.yomi for k in self.your_mochigoma]))
         s.append('')
-        for i in range(self.SIZE_ROW, 0, -1):
+        for y in range(1, self.SIZE_ROW + 1):
             row = []
-            for j in range(1, self.SIZE_COL + 1):
-                if (i, j) in self.my_board:
-                    row.append('+{}'.format(self.my_board[(i, j)].yomi))
-                elif (i, j) in self.your_board:
-                    row.append('-{}'.format(self.your_board[(i, j)].yomi))
+            for x in range(1, self.SIZE_COL + 1):
+                if (x, y) in self.my_board:
+                    row.append('+{}'.format(self.my_board[(x, y)].yomi))
+                elif (x, y) in self.your_board:
+                    row.append('-{}'.format(self.your_board[(x, y)].yomi))
                 else:
                     row.append(' * ')
             s.append(''.join(row))
@@ -127,7 +143,7 @@ class Board(object):
         b.my_turn = not self.my_turn
         b.my_mochigoma = copy(self.your_mochigoma)
         b.your_mochigoma = copy(self.my_mochigoma)
-        flip_xy = lambda (x, y): (self.SIZE_ROW - x + 1, self.SIZE_COL - y + 1)
+        flip_xy = lambda (x, y): (self.SIZE_COL - x + 1, self.SIZE_ROW - y + 1)
         b.my_board = {flip_xy(coord): koma for coord, koma in self.your_board.iteritems()}
         b.your_board = {flip_xy(coord): koma for coord, koma in self.my_board.iteritems()}
         return b
@@ -270,12 +286,12 @@ class Koma(object):
 LION = Koma([[-1, 1], [-1, 0], [-1, -1], [0, 1], [0, -1], [1, 1], [1, 0], [1, -1]], 100, 'OU')
 GIRAFFE = Koma([[-1, 0], [0, 1], [0, -1], [1, 0]], 4, 'HI')
 ELEPHANT = Koma([[-1, 1], [-1, -1], [1, 1], [1, -1]], 4, 'KA')
-CHICKEN = Koma([[-1, 1], [-1, 0], [0, 1], [0, -1], [1, 1], [1, 0]], 4, 'TO')
-CHICK = Koma([[1, 0]], 3, 'FU')
+CHICKEN = Koma([[0, -1], [1, -1], [1, 0], [0, 1], [-1, 0], [-1, -1]], 4, 'TO')
+CHICK = Koma([[0, -1]], 3, 'FU')
 
 INITIAL_BOARD = Board()
-INITIAL_BOARD.my_board = {(1, 1): ELEPHANT, (1, 2): LION, (1, 3): GIRAFFE, (2, 2): CHICK}
-INITIAL_BOARD.your_board = {(4, 3): ELEPHANT, (4, 2): LION, (4, 1): GIRAFFE, (3, 2): CHICK}
+INITIAL_BOARD.my_board = {(1, 4): ELEPHANT, (2, 4): LION, (3, 4): GIRAFFE, (2, 3): CHICK}
+INITIAL_BOARD.your_board = {(3, 1): ELEPHANT, (2, 1): LION, (1, 1): GIRAFFE, (2, 2): CHICK}
 
 
 def main():

@@ -1,4 +1,19 @@
-from animal_shogi import INITIAL_BOARD, equals, simplify
+import sys
+print('\n'.join(sys.path))
+import os
+print("vvvv PYTHONPATH vvvv")
+print(os.environ['PYTHONPATH'])
+print("^^^^ PYTHONPATH ^^^^")
+from animal_shogi import INITIAL_BOARD, equals, simplify, Board
+
+
+def assert_board_equal(expected, actual):
+    if not equals(expected, actual):
+        print "== Expected =="
+        print expected
+        print "\n== Actual =="
+        print actual
+        raise AssertionError("Boards are not equal")
 
 
 class TestBoard:
@@ -20,6 +35,31 @@ class TestBoard:
         }
         assert expected == board.to_dict()
 
+    def test_from_str(self):
+        board_str = """        
+        my_turn=True
+        
+        
+        -HI-OU-KA
+         *  *  * 
+         * +FU * 
+        +KA+OU+HI
+        
+        FU
+        """
+        board = Board.from_str(board_str)
+        assert_board_equal(board_str, str(board))
+
+    def test_to_str(self):
+        expected = """
+        my_turn=True
+        -HI-OU-KA
+         * -FU *
+         * +FU *
+        +KA+OU+HI
+        """
+        assert_board_equal(expected, str(INITIAL_BOARD))
+
     def test_flip(self):
         expected = """
         my_turn=False
@@ -30,7 +70,7 @@ class TestBoard:
         """
 
         actual = str(INITIAL_BOARD.flip())
-        assert equals(expected, actual)
+        assert_board_equal(expected, actual)
 
     def test_possible_moves_from_initial_position(self):
         actual = set(INITIAL_BOARD.possible_nexts)
@@ -75,7 +115,7 @@ class TestBoard:
 
     def test_possible_moves_with_mochigoma(self):
         board = INITIAL_BOARD.copy()
-        koma = board.your_board.pop((3, 2))
+        koma = board.your_board.pop((2, 2))
         board.my_mochigoma[koma] = 1
 
         actual = board.possible_nexts
